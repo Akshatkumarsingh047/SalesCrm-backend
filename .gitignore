@@ -16,5 +16,5 @@ yarn-error.log*
 # system files
 .DS_Store
 Thumbs.db
-package.json
-package-lock.json
+/package.json
+/package-lock.json

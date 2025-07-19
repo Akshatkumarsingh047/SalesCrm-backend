@@ -4,9 +4,9 @@ const forexModel = require('./models/forex');
 const router = express.Router();
 const analyticsRouter = require('./routes/analytics'); // Adjust path if needed
 const app = express();
-const profileModel = require('./models/agentProfile');
+const normalizeRoutes = require('./routes/normalize'); // Adjust path if needed
 const profileRoutes = require("./routes/profileRoutes"); // Adjust path if needed
-connectDB('mongodb://localhost:27017/SalesCRM');
+connectDB(process.env.MONGODB_URI);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const ALL_STATUSES = [
@@ -193,7 +193,8 @@ app.get('/search-companies', async (req, res) => {
       return res.status(400).json({ error: 'Both query "q" and "agentId" are required' });
     }
 
-    const regex = new RegExp(q, 'i'); // case-insensitive partial match
+    // Skip special characters at beginning, then match
+    const regex = new RegExp(`^[^a-zA-Z0-9]*${q}`, 'i');
 
     const results = await forexModel.find({
       Company_name: regex,
@@ -208,12 +209,14 @@ app.get('/search-companies', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 //analytics route for daily/weekly/monthly counts
 app.use('/api', analyticsRouter);
 
 
 // get profile data
-// GET /profile?email=agent@example.com
-app.use(profileRoutes);
+// GET /agentProfile?email=agent@example.com
+app.use("/agentProfile", profileRoutes); // ✅ CORRECT
+app.use("/agents",normalizeRoutes); // ✅ CORRECT
 // Start server
 app.listen(3000, () => console.log("🚀 Server running"));

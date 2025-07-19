@@ -219,4 +219,4 @@ app.use('/api', analyticsRouter);
 app.use("/agentProfile", profileRoutes); // ✅ CORRECT
 app.use("/agents",normalizeRoutes); // ✅ CORRECT
 // Start server
-app.listen(3000, () => console.log("🚀 Server running"));
+app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));

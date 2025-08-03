@@ -84,7 +84,7 @@ app.put("/lead/update", async (req, res) => {
 });
 
 // Dashboard leads
-app.get("/leads", async (req, res) => {
+app.post("/leads", async (req, res) => {
   const { userId } = req.body;
   if (!userId) return res.status(400).json({ message: "userId is required." });
 

@@ -99,6 +99,8 @@ app.post("/leads", async (req, res) => {
           status: { $in: ALL_STATUSES }
         }
       },
+     //imp sort
+     { $sort: { updatedAt: -1 } },
 
       // 3. Group by status
       {

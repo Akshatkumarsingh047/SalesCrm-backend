@@ -10,7 +10,7 @@ connectDB(process.env.MONGODB_URI).then(()=>{
   console.log("database connected successfully ✅✅")
   app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));
 }).catch(()=>console.log("error in connecting to Database❌❌"))
-
+app.use(express.json());
 
 const ALL_STATUSES = [
   "converted", "demo", "dnp", "wrong number", "call me later",

@@ -5,8 +5,7 @@ const analyticsRouter = require('./routes/analytics'); // Adjust path if needed
 const app = express();
 const normalizeRoutes = require('./routes/normalize'); // Adjust path if needed
 const profileRoutes = require("./routes/profileRoutes"); // Adjust path if needed
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
 connectDB(process.env.MONGODB_URI).then(()=>{
   console.log("database connected successfully ✅✅")
   app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));
@@ -90,17 +89,43 @@ app.post("/leads", async (req, res) => {
   if (!userId) return res.status(400).json({ message: "userId is required." });
 
   try {
-    const allLeads = await forexModel.find({ assignedTo: userId }).lean();
-    const grouped = {};
-    ALL_STATUSES.forEach(s => grouped[s] = []);
-    allLeads.forEach(lead => {
-      const st = (lead.status || '').toLowerCase();
-      if (ALL_STATUSES.includes(st)) grouped[st].unshift(lead);
+    const groupedLeads = await forexModel.aggregate([
+      // 1. Match leads assigned to the user
+      { $match: { assignedTo: userId } },
+
+      // 2. Project normalized status field
+      {
+        $project: {
+          ...Object.fromEntries(Object.keys(forexModel.schema.paths).map(k => [k, 1])),
+          status: { $toLower: "$status" }
+        }
+      },
+
+      // 3. Filter only those leads whose status is in ALL_STATUSES
+      {
+        $match: {
+          status: { $in: ALL_STATUSES }
+        }
+      },
+
+      // 4. Group by status
+      {
+        $group: {
+          _id: "$status",
+          leads: { $push: "$$ROOT" }
+        }
+      }
+    ]);
+
+    // Step 5: Format response with all statuses (empty arrays for missing ones)
+    const grouped = Object.fromEntries(ALL_STATUSES.map(status => [status, []]));
+    groupedLeads.forEach(group => {
+      grouped[group._id] = group.leads;
     });
-  
+
     res.status(200).json(grouped);
   } catch (err) {
-    console.error("❌ Error fetching leads:", err);
+    console.error("❌ Error fetching leads (aggregation):", err);
     res.status(500).json({ message: "Server Error" });
   }
 });
@@ -222,5 +247,5 @@ app.use('/api', analyticsRouter);
 // GET /agentProfile?email=agent@example.com
 app.use("/agentProfile", profileRoutes); // ✅ CORRECT
 app.use("/agents",normalizeRoutes); // ✅ CORRECT
-// Start server
+
 

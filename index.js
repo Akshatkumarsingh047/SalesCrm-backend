@@ -90,25 +90,17 @@ app.post("/leads", async (req, res) => {
 
   try {
     const groupedLeads = await forexModel.aggregate([
-      // 1. Match leads assigned to the user
+      // 1. Match leads assigned to this user
       { $match: { assignedTo: userId } },
 
-      // 2. Project normalized status field
-      {
-        $project: {
-          ...Object.fromEntries(Object.keys(forexModel.schema.paths).map(k => [k, 1])),
-          status: { $toLower: "$status" }
-        }
-      },
-
-      // 3. Filter only those leads whose status is in ALL_STATUSES
+      // 2. Filter only valid statuses (exact match)
       {
         $match: {
           status: { $in: ALL_STATUSES }
         }
       },
 
-      // 4. Group by status
+      // 3. Group by status
       {
         $group: {
           _id: "$status",
@@ -117,7 +109,7 @@ app.post("/leads", async (req, res) => {
       }
     ]);
 
-    // Step 5: Format response with all statuses (empty arrays for missing ones)
+    // 4. Prepare grouped object with all statuses
     const grouped = Object.fromEntries(ALL_STATUSES.map(status => [status, []]));
     groupedLeads.forEach(group => {
       grouped[group._id] = group.leads;
@@ -129,6 +121,7 @@ app.post("/leads", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 // Add remark
 app.put("/lead/add-remark", async (req, res) => {

@@ -5,9 +5,14 @@ const analyticsRouter = require('./routes/analytics'); // Adjust path if needed
 const app = express();
 const normalizeRoutes = require('./routes/normalize'); // Adjust path if needed
 const profileRoutes = require("./routes/profileRoutes"); // Adjust path if needed
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+connectDB(process.env.MONGODB_URI).then(()=>{
+  console.log("database connected successfully ✅✅")
+  app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));
+}).catch(()=>console.log("error in connecting to Database❌❌"))
+
+
 const ALL_STATUSES = [
   "converted", "demo", "dnp", "wrong number", "call me later",
   "busy", "out of station", "not interested", "dormants", "emails"
@@ -218,7 +223,4 @@ app.use('/api', analyticsRouter);
 app.use("/agentProfile", profileRoutes); // ✅ CORRECT
 app.use("/agents",normalizeRoutes); // ✅ CORRECT
 // Start server
-connectDB(process.env.MONGODB_URI).then(()=>{
-  console.log("database connected successfully ✅✅")
-  app.listen(process.env.PORT || 3000, () => console.log("🚀 Server running"));
-}).catch(()=>console.log("error in connecting to Database❌❌"))
+
